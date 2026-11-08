@@ -1,10 +1,20 @@
 {
-  "extends": "@hanahaki/typescript-config/react-library.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "declaration": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "lib": ["es2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
+    "moduleDetection": "force",
     "moduleResolution": "Bundler",
     "noEmit": true,
-    "paths": { "petalfall": ["./src/index.ts"] }
+    "noUncheckedIndexedAccess": true,
+    "paths": { "petalfall": ["./src/index.ts"] },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

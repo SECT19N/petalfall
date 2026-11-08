@@ -50,7 +50,8 @@
     "dev": "tsup --watch",
     "check-types": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "test": "tsx --test \"src/**/*.test.ts\""
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "prepublishOnly": "pnpm build && pnpm test"
   },
   "peerDependencies": {
     "react": ">=18"
@@ -61,14 +62,15 @@
     }
   },
   "devDependencies": {
-    "@hanahaki/eslint-config": "workspace:*",
-    "@hanahaki/typescript-config": "workspace:*",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "eslint": "^10.14.0",
     "react": "^19.3.1",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3"
-  }
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1"
+  },
+  "packageManager": "pnpm@12.16.1"
 }
