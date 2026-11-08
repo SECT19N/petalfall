@@ -13,6 +13,15 @@
     "sakura"
   ],
   "license": "MIT",
+  "author": "SECT19N",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SECT19N/petalfall.git"
+  },
+  "homepage": "https://github.com/SECT19N/petalfall#readme",
+  "bugs": {
+    "url": "https://github.com/SECT19N/petalfall/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
