@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>petalfall demo</title>
+<style>
+  body {
+    font:
+      16px system-ui,
+      sans-serif;
+    margin: 0;
+    background: #fff7f5;
+    color: #3b2a30;
+    min-height: 100vh;
+  }
+  main {
+    max-width: 36rem;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
+    margin-bottom: 1rem;
+  }
+  label {
+    display: block;
+    margin: 0.5rem 0 0.15rem;
+    font-size: 0.85rem;
+  }
+  button,
+  select,
+  input {
+    font: inherit;
+  }
+  #box {
+    position: relative;
+    height: 12rem;
+    background: #e8f0ff;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+</style>
+<main>
+  <div class="card">
+    <h1>petalfall</h1>
+    <p>
+      Drag a falling petal and fling it. This card is opaque, so petals behind
+      it can't be grabbed.
+    </p>
+    <label
+      >Preset
+      <select id="preset">
+        <option>sakura</option>
+        <option>autumn</option>
+        <option>snow</option>
+        <option>confetti</option>
+        <option value="emoji">emoji</option>
+        <option value="glyphs">text glyphs</option>
+      </select>
+    </label>
+    <label
+      >Count <input id="count" type="range" min="0" max="120" value="16"
+    /></label>
+    <label
+      >Speed
+      <input id="speed" type="range" min="0.2" max="3" step="0.1" value="1"
+    /></label>
+    <button id="pause">Pause</button>
+    <button id="destroy">Destroy</button>
+    <p>Grabbed: <b id="grabbed">0</b></p>
+  </div>
+  <div id="box" class="card">Contained instance</div>
+</main>
+<script type="module">
+  import { mount, glyphs } from "../dist/index.js";
+
+  const grabbed = document.getElementById("grabbed");
+  let n = 0;
+  const common = { grab: { onGrab: () => (grabbed.textContent = ++n) } };
+  const presets = {
+    emoji: {
+      particles: ["🍂", "🍁", "🌸", "🪻", "✨"],
+      opacity: 0.9,
+      size: [10, 18],
+    },
+    glyphs: { particles: glyphs.text.florals, color: "#c0507a", opacity: 0.8 },
+  };
+  const make = (name) =>
+    mount(document.body, {
+      ...common,
+      count: +count.value,
+      speed: +speed.value,
+      ...(presets[name] ?? { preset: name }),
+    });
+
+  let pf = make("sakura");
+  window.pf = pf;
+  const box = mount(document.getElementById("box"), {
+    preset: "autumn",
+    count: 8,
+    layer: "front",
+    grab: false,
+  });
+  window.box = box;
+  let paused = false;
+  preset.onchange = () =>
+    pf.update({
+      ...(presets[preset.value] ?? {
+        preset: preset.value,
+        particles: undefined,
+      }),
+    });
+  count.oninput = () => pf.update({ count: +count.value });
+  speed.oninput = () => pf.update({ speed: +speed.value });
+  pause.onclick = () => {
+    paused = !paused;
+    paused ? pf.pause() : pf.resume();
+    pause.textContent = paused ? "Resume" : "Pause";
+  };
+  destroy.onclick = () => {
+    pf.destroy();
+    box.destroy();
+  };
+</script>
