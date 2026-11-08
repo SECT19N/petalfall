@@ -58,3 +58,31 @@ export function resolveOptions(input: PetalfallOptions = {}): ResolvedOptions {
           : {},
   };
 }
+
+const sameGrab = (a: false | GrabOptions, b: false | GrabOptions) => {
+  if (a === false || b === false) return a === b;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const k of keys) {
+    if (a[k as keyof GrabOptions] !== b[k as keyof GrabOptions]) return false;
+  }
+  return true;
+};
+
+/**
+ * Whether going from `a` to `b` means rebuilding the particles. Opacity and the
+ * default colour are CSS variables on the root, so they can change in place.
+ */
+export function needsRebuild(a: ResolvedOptions, b: ResolvedOptions): boolean {
+  return (
+    a.count !== b.count ||
+    a.speed !== b.speed ||
+    a.wind !== b.wind ||
+    a.seed !== b.seed ||
+    a.layer !== b.layer ||
+    a.respectReducedMotion !== b.respectReducedMotion ||
+    a.size[0] !== b.size[0] ||
+    a.size[1] !== b.size[1] ||
+    JSON.stringify(a.particles) !== JSON.stringify(b.particles) ||
+    !sameGrab(a.grab, b.grab)
+  );
+}

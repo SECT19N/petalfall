@@ -52,7 +52,7 @@ export const isShapeName = (name: string): name is ShapeName =>
 /** An SVG shape as a `url("data:...")` value for CSS mask/background. */
 export function svgDataUrl(viewBox: string, path: string, stroke = false) {
   const body = stroke
-    ? `<path d='${path}' stroke='black' stroke-width='2' stroke-linecap='round' fill='none'/>`
+    ? `<path d='${path}' stroke='black' stroke-width='3' stroke-linecap='round' fill='none'/>`
     : `<path d='${path}'/>`;
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='${viewBox}'>${body}</svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;

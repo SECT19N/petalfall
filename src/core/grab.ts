@@ -14,6 +14,11 @@ const INTERACTIVE =
 /** Inline styles the grab overrides, put back on release. */
 const OVERRIDDEN = ["animation", "left", "top", "transform", "will-change"];
 
+export interface GrabControl {
+  setPaused(paused: boolean): void;
+  destroy(): void;
+}
+
 type Held = Body & {
   el: HTMLElement;
   w: number;
@@ -25,6 +30,8 @@ type Held = Body & {
   lastY: number;
   pointerId: number;
   saved: Map<string, string>;
+  /** Sway offset, so flung particles don't drift in step. */
+  phase: number;
 };
 
 /** Whether something opaque (a card, a navbar, a form) is drawn over this point. */
@@ -46,17 +53,18 @@ const place = (h: Held) =>
 
 /**
  * Lets visitors pick up the drifting particles inside `root` and fling them.
- * Only the held particle is driven by JS, and a requestAnimationFrame loop runs
- * only while one is held or flying; on release it eases into a slow fall and,
- * once off-screen, hands back to the CSS drift. Particles can sit behind the
+ * Only the held particle is driven by JS. Pointer-move listeners exist only
+ * while one is held, and a single requestAnimationFrame loop runs only while
+ * something is flying; on release a particle eases into a slow fall and, once
+ * off-screen, hands back to the CSS drift. Particles can sit behind the
  * page, so they are hit-tested by position on pointerdown, not by event target.
- * Returns a cleanup function.
+ * `setPaused` freezes the flying particles along with the CSS-driven ones.
  */
 export function createGrab(
   root: HTMLElement,
   options: GrabOptions,
   layer: "behind" | "front",
-): () => void {
+): GrabControl {
   const doc = root.ownerDocument;
   const win = doc.defaultView!;
   const reach = options.reach ?? 14;
@@ -68,8 +76,14 @@ export function createGrab(
       ? (x: number, y: number) => isOpaqueAt(x, y, doc)
       : () => false);
 
+  const contained = root.hasAttribute("data-contained");
   let held: Held | null = null;
-  const flying = new Map<Held, number>();
+  // Measured on pick-up, so mounting costs no layout read.
+  let rootRect: { left: number; top: number } = { left: 0, top: 0 };
+  const flying = new Set<Held>();
+  let raf = 0;
+  let lastFrame = 0;
+  let paused = false;
 
   function release(h: Held) {
     for (const prop of OVERRIDDEN) {
@@ -80,22 +94,34 @@ export function createGrab(
     h.el.classList.remove("pf-held");
   }
 
-  function fly(h: Held) {
-    let last = performance.now();
-    const phase = Math.random() * Math.PI * 2;
-    const step = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      stepFlight(h, dt, now, phase);
+  /** One frame for every flying particle. */
+  function tick(now: number) {
+    const dt = Math.min(0.05, (now - lastFrame) / 1000);
+    lastFrame = now;
+    // Particles live in the root, so it's the root's edges that count.
+    const width = root.clientWidth;
+    const height = root.clientHeight;
+    for (const h of flying) {
+      stepFlight(h, dt, now, h.phase);
       place(h);
-      if (isGone(h, win.innerWidth, win.innerHeight)) {
+      if (isGone(h, width, height)) {
         release(h);
         flying.delete(h);
-      } else {
-        flying.set(h, win.requestAnimationFrame(step));
       }
-    };
-    flying.set(h, win.requestAnimationFrame(step));
+    }
+    raf = flying.size ? win.requestAnimationFrame(tick) : 0;
+  }
+
+  function fly(h: Held) {
+    h.phase = Math.random() * Math.PI * 2;
+    flying.add(h);
+    run();
+  }
+
+  function run() {
+    if (raf || paused || flying.size === 0) return;
+    lastFrame = performance.now();
+    raf = win.requestAnimationFrame(tick);
   }
 
   function pick(e: PointerEvent) {
@@ -130,9 +156,8 @@ export function createGrab(
     if (!best) return;
 
     // A particle already in flight can't be hit again: hand it back first.
-    for (const [f, id] of flying) {
+    for (const f of flying) {
       if (f.el === best.el) {
-        win.cancelAnimationFrame(id);
         flying.delete(f);
         release(f);
       }
@@ -144,7 +169,7 @@ export function createGrab(
     const h = el.offsetHeight;
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const rootRect = root.getBoundingClientRect();
+    rootRect = root.getBoundingClientRect();
     const saved = new Map(
       OVERRIDDEN.map((p) => [p, el.style.getPropertyValue(p)]),
     );
@@ -165,6 +190,7 @@ export function createGrab(
       lastY: e.clientY,
       pointerId: e.pointerId,
       saved,
+      phase: 0,
     };
     el.style.animation = "none";
     el.style.left = "0px";
@@ -173,6 +199,9 @@ export function createGrab(
     el.classList.add("pf-held");
     place(held);
     doc.body.style.userSelect = "none";
+    doc.addEventListener("pointermove", onMove);
+    doc.addEventListener("pointerup", onUp);
+    doc.addEventListener("pointercancel", onUp);
     e.preventDefault();
     options.onGrab?.(el);
   }
@@ -182,7 +211,8 @@ export function createGrab(
     const h = held;
     const dt = Math.max(1, e.timeStamp - h.lastT) / 1000;
     trackPointer(h, e.clientX - h.lastX, e.clientY - h.lastY, dt);
-    const rootRect = root.getBoundingClientRect();
+    // A fixed root never moves; a contained one can scroll under the pointer.
+    if (contained) rootRect = root.getBoundingClientRect();
     h.lastT = e.timeStamp;
     h.lastX = e.clientX;
     h.lastY = e.clientY;
@@ -191,9 +221,16 @@ export function createGrab(
     place(h);
   }
 
+  function stopTracking() {
+    doc.removeEventListener("pointermove", onMove);
+    doc.removeEventListener("pointerup", onUp);
+    doc.removeEventListener("pointercancel", onUp);
+    doc.body.style.removeProperty("user-select");
+  }
+
   function onUp(e: PointerEvent) {
     if (!held || e.pointerId !== held.pointerId) return;
-    doc.body.style.removeProperty("user-select");
+    stopTracking();
     const h = held;
     held = null;
     releaseVelocity(h, e.timeStamp - h.lastT, maxFling);
@@ -201,22 +238,24 @@ export function createGrab(
   }
 
   doc.addEventListener("pointerdown", onDown);
-  doc.addEventListener("pointermove", onMove);
-  doc.addEventListener("pointerup", onUp);
-  doc.addEventListener("pointercancel", onUp);
 
-  return () => {
-    doc.removeEventListener("pointerdown", onDown);
-    doc.removeEventListener("pointermove", onMove);
-    doc.removeEventListener("pointerup", onUp);
-    doc.removeEventListener("pointercancel", onUp);
-    for (const [h, id] of flying) {
-      win.cancelAnimationFrame(id);
-      release(h);
-    }
-    flying.clear();
-    if (held) release(held);
-    held = null;
-    doc.body.style.removeProperty("user-select");
+  return {
+    setPaused(value) {
+      paused = value;
+      if (paused) {
+        win.cancelAnimationFrame(raf);
+        raf = 0;
+      } else run();
+    },
+    destroy() {
+      doc.removeEventListener("pointerdown", onDown);
+      stopTracking();
+      win.cancelAnimationFrame(raf);
+      raf = 0;
+      for (const h of flying) release(h);
+      flying.clear();
+      if (held) release(held);
+      held = null;
+    },
   };
 }

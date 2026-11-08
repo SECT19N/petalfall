@@ -1,8 +1,8 @@
-import { resolveOptions } from "../options";
+import { type ResolvedOptions, needsRebuild, resolveOptions } from "../options";
 import { createRng, pickWeighted } from "./rng";
 import { isGlyphSupported } from "../support";
 import type { Petalfall, PetalfallOptions } from "../types";
-import { createGrab } from "./grab";
+import { type GrabControl, createGrab } from "./grab";
 import { type Layout, createParticleEl, resolveParticle } from "./particles";
 import { ensureStyle } from "./style";
 
@@ -40,24 +40,47 @@ export function mount(
   host.appendChild(root);
 
   let input = options;
+  let current = resolveOptions(input);
   let userPaused = false;
   let hiddenPaused = doc.hidden;
-  let stopGrab: (() => void) | undefined;
+  let offscreen = false;
+  let grab: GrabControl | undefined;
 
-  const syncPause = () =>
-    root.toggleAttribute("data-paused", userPaused || hiddenPaused);
+  const syncPause = () => {
+    const paused = userPaused || hiddenPaused || offscreen;
+    root.toggleAttribute("data-paused", paused);
+    // Particles that were grabbed are driven by JS, so they need freezing too.
+    grab?.setPaused(paused);
+  };
   const onVisibility = () => {
     hiddenPaused = doc.hidden;
     syncPause();
   };
   doc.addEventListener("visibilitychange", onVisibility);
 
-  function build() {
-    stopGrab?.();
-    stopGrab = undefined;
+  // A contained instance has nothing to show once its element is scrolled away.
+  const win = doc.defaultView;
+  const watcher =
+    contained && win && "IntersectionObserver" in win
+      ? new win.IntersectionObserver((entries) => {
+          offscreen = !entries[entries.length - 1]!.isIntersecting;
+          syncPause();
+        })
+      : undefined;
+  watcher?.observe(host);
+
+  /** The parts of the look that live on the root, so they change without a rebuild. */
+  function applyLook(o: ResolvedOptions) {
+    root.style.setProperty("--pf-color", o.color);
+    root.style.setProperty("--pf-opacity", String(o.opacity));
+  }
+
+  function build(o: ResolvedOptions) {
+    grab?.destroy();
+    grab = undefined;
     root.replaceChildren();
 
-    const o = resolveOptions(input);
+    applyLook(o);
     root.setAttribute("data-layer", o.layer);
     root.toggleAttribute("data-rm", o.respectReducedMotion);
     syncPause();
@@ -86,21 +109,23 @@ export function mount(
         duration,
         delay: -Math.round(rng() * duration * 10) / 10,
       };
-      frag.appendChild(
-        createParticleEl(doc, particle, layout, o.color, o.opacity),
-      );
+      frag.appendChild(createParticleEl(doc, particle, layout));
     }
     root.appendChild(frag);
 
-    if (o.grab) stopGrab = createGrab(root, o.grab, o.layer);
+    if (o.grab) grab = createGrab(root, o.grab, o.layer);
+    syncPause();
   }
 
-  build();
+  build(current);
 
   return {
     update(next) {
       input = { ...input, ...next };
-      build();
+      const o = resolveOptions(input);
+      if (needsRebuild(current, o)) build(o);
+      else applyLook(o);
+      current = o;
     },
     pause() {
       userPaused = true;
@@ -112,8 +137,9 @@ export function mount(
     },
     destroy() {
       doc.removeEventListener("visibilitychange", onVisibility);
-      stopGrab?.();
-      stopGrab = undefined;
+      watcher?.disconnect();
+      grab?.destroy();
+      grab = undefined;
       root.remove();
       if (contained) host.style.position = hostPosition;
     },

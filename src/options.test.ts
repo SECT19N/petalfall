@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { resolveOptions } from "./options";
+import { needsRebuild, resolveOptions } from "./options";
 import { resolveParticle } from "./core/particles";
 import { asEmoji, asText } from "./glyphs";
 
@@ -16,7 +16,7 @@ describe("resolveOptions", () => {
   it("lets your options override a preset", () => {
     const o = resolveOptions({ preset: "snow", count: 5 });
     assert.equal(o.count, 5);
-    assert.equal(o.color, "#ffffff");
+    assert.equal(o.color, "#b4d0ee");
   });
   it("ignores undefined values and unknown presets", () => {
     const o = resolveOptions({ count: undefined, preset: "nope" as never });
@@ -67,5 +67,34 @@ describe("glyph helpers", () => {
   it("forces text or emoji presentation", () => {
     assert.equal(asText("❄️"), "❄︎");
     assert.equal(asEmoji("❄"), "❄️");
+  });
+});
+
+describe("needsRebuild", () => {
+  const base = resolveOptions({ preset: "sakura" });
+  it("applies opacity and colour in place", () => {
+    const next = resolveOptions({
+      preset: "sakura",
+      opacity: 0.8,
+      color: "red",
+    });
+    assert.equal(needsRebuild(base, next), false);
+  });
+  it("rebuilds when the layout changes", () => {
+    assert.equal(
+      needsRebuild(base, resolveOptions({ preset: "sakura", count: 3 })),
+      true,
+    );
+    assert.equal(
+      needsRebuild(base, resolveOptions({ preset: "sakura", seed: 9 })),
+      true,
+    );
+    assert.equal(needsRebuild(base, resolveOptions({ preset: "snow" })), true);
+  });
+  it("rebuilds when a grab callback is swapped", () => {
+    const a = resolveOptions({ grab: { onGrab: () => {} } });
+    const b = resolveOptions({ grab: { onGrab: () => {} } });
+    assert.equal(needsRebuild(a, b), true);
+    assert.equal(needsRebuild(a, a), false);
   });
 });

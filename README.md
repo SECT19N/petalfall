@@ -103,7 +103,7 @@ Pick one with `preset`. Any other option you pass overrides it.
 | ---------- | ---------------------------------------------------------- | --------------------------------------------- |
 | `sakura`   | Pink cherry-blossom petals, hearts and slivers             | 16 particles, soft pink `#f2a7bd`             |
 | `autumn`   | Maple and plain leaves in orange, amber, rust and olive    | 18 larger particles (14–26 px), more opaque   |
-| `snow`     | Mostly round dots with the occasional snowflake            | 40 small white particles, slow fall           |
+| `snow`     | Mostly round dots with the occasional snowflake            | 40 icy-blue particles, slow fall              |
 | `confetti` | Almonds and slivers in red, yellow, green, blue and purple | 36 particles, fast fall, strong sideways wind |
 
 ```ts

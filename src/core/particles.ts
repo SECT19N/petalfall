@@ -55,8 +55,6 @@ export function createParticleEl(
   doc: Document,
   p: ResolvedParticle,
   layout: Layout,
-  defaultColor: string,
-  opacity: number,
 ): HTMLElement {
   const el = doc.createElement("span");
   el.setAttribute("data-petalfall", "");
@@ -80,8 +78,9 @@ export function createParticleEl(
   el.style.left = `${layout.left}%`;
   const set = (name: string, value: string) =>
     el.style.setProperty(name, value);
-  set("--pf-color", p.color ?? defaultColor);
-  set("--pf-opacity", String(opacity));
+  // Opacity and the default colour are inherited from the root, so changing
+  // them never has to rebuild the particles.
+  if (p.color) set("--pf-color", p.color);
   set("--pf-drift", `${layout.drift}cqw`);
   set("--pf-spin", String(layout.spin));
   set("--pf-duration", `${layout.duration}s`);

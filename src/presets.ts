@@ -22,14 +22,15 @@ export const PRESETS: Record<PresetName, PetalfallOptions> = {
   },
   snow: {
     count: 40,
-    size: [4, 12],
-    opacity: 0.85,
+    size: [6, 14],
+    opacity: 0.9,
     wind: 3,
     speed: 0.8,
-    color: "#ffffff",
+    // Pale ice blue rather than white: still reads on dark pages, and on white ones.
+    color: "#b4d0ee",
     particles: [
-      { shape: "dot", weight: 4 },
-      { shape: "snowflake", weight: 1 },
+      { shape: "dot", weight: 3 },
+      { shape: "snowflake", weight: 2 },
     ],
   },
   confetti: {
