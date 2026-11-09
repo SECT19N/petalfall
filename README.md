@@ -11,7 +11,7 @@ dependencies, framework-agnostic, with a grab-and-fling interaction.
 
 - **Tiny.** About 5 kB gzipped, no runtime dependencies.
 - **Cheap to run.** Animations are CSS only; JS runs only for a particle someone is holding or has flung.
-- **Yours to style.** Nine built-in shapes, four presets, plus emoji, text glyphs, images and inline SVG.
+- **Yours to style.** Ten built-in shapes, four presets, plus emoji, text glyphs, images and inline SVG.
 - **Considerate.** Respects `prefers-reduced-motion`, ignores pointer events outside grabbing, safe in SSR.
 
 ## Quick start
@@ -131,6 +131,7 @@ Built-in shapes are drawn as small SVGs and follow the `color` option.
 | `sliver`    | sakura, confetti |
 | `leaf`      | autumn           |
 | `maple`     | autumn           |
+| `feather`   |                  |
 | `dot`       | snow             |
 | `snowflake` | snow             |
 
@@ -179,7 +180,7 @@ Microsoft systems and can't be recoloured. Some characters can be either;
 `asText("❄")` and `asEmoji("❄")` pick one. Glyphs the system can't draw (new
 emoji on an old OS) are skipped automatically.
 
-`glyphs` has ready-made sets: `glyphs.text.florals`, `glyphs.emoji.leaves`, and so on.
+`glyphs` has ready-made sets: `glyphs.text.florals`, `glyphs.emoji.nature`, `glyphs.emoji.seeds`, and so on.
 
 ### Grab and fling
 

@@ -8,6 +8,7 @@ export type ShapeName =
   | "dot"
   | "leaf"
   | "maple"
+  | "feather"
   | "snowflake";
 
 interface ParticleBase {

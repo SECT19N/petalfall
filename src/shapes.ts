@@ -38,6 +38,12 @@ export const SHAPES: Record<ShapeName, ShapeDef> = {
     viewBox: "0 0 24 24",
     path: "M12 1l2.2 4.6 3.3-1.6-.8 5 4.3-.7-2.3 3.8 3.3 2.3-4.6.9.900 1.900-5.1-.6.100 4.9h-2.6l.1-4.9-5.1.6.9-1.900-4.6-.9 3.3-2.3-2.3-3.8 4.3.7-.8-5 3.3 1.6z",
   },
+  // Feather: two vanes with a thin gap where the quill runs.
+  feather: {
+    ratio: 2.3,
+    viewBox: "0 0 12 28",
+    path: "M5.5 1C1 6 0 14 4 21l1.5 6zM6.5 1C11 6 12 14 8 21l-1.5 6z",
+  },
   snowflake: {
     ratio: 1,
     viewBox: "0 0 24 24",
