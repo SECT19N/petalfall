@@ -19,6 +19,7 @@
         --fg: #fbeef3;
         --muted: rgb(251 238 243 / 0.68);
         --panel: rgb(20 14 22 / 0.72);
+        --menu: #1d1620;
         --panel-fg: #f6eef2;
         --line: rgb(255 255 255 / 0.14);
         --accent: #f2a7bd;
@@ -40,6 +41,7 @@
         --fg: #2e2228;
         --muted: rgb(46 34 40 / 0.66);
         --panel: rgb(255 252 248 / 0.8);
+        --menu: #fffcf8;
         --panel-fg: #2e2228;
         --line: rgb(0 0 0 / 0.1);
         color-scheme: light;
@@ -170,14 +172,82 @@
     .field output { font-variant-numeric: tabular-nums; color: var(--panel-fg); }
     .row { display: flex; gap: 0.5rem; align-items: center; }
     .row > * { flex: 1; }
-    select {
+    /* Custom dropdown: a button plus a popover listbox (top layer, so the
+       panel's scroll can't clip it, and outside clicks close it). */
+    .select {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
         width: 100%;
-        padding: 0.45rem 0.6rem;
+        padding: 0.5rem 0.65rem;
         border: 1px solid var(--line);
         border-radius: 10px;
         background: rgb(255 255 255 / 0.06);
+        text-align: left;
+        cursor: pointer;
     }
-    select option { color: #222; background: #fff; }
+    .select:hover { background: rgb(255 255 255 / 0.11); }
+    [data-scene="paper"] .select { background: rgb(0 0 0 / 0.03); }
+    [data-scene="paper"] .select:hover { background: rgb(0 0 0 / 0.06); }
+    .select .chev { margin-left: auto; opacity: 0.6; transition: transform 0.15s ease; }
+    .select[aria-expanded="true"] .chev { transform: rotate(180deg); }
+    .select-value { display: contents; }
+
+    .listbox {
+        position: fixed;
+        inset: auto;
+        margin: 0;
+        padding: 4px;
+        max-height: min(28rem, 70vh);
+        overflow: auto;
+        list-style: none;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--menu);
+        color: var(--panel-fg);
+        font-size: 0.88rem;
+        box-shadow: 0 18px 44px rgb(0 0 0 / 0.38);
+        opacity: 0;
+        transform: translateY(-4px);
+        transition:
+            opacity 0.12s ease,
+            transform 0.12s ease,
+            display 0.12s allow-discrete,
+            overlay 0.12s allow-discrete;
+    }
+    .listbox:popover-open { opacity: 1; transform: none; }
+    @starting-style { .listbox:popover-open { opacity: 0; transform: translateY(-4px); } }
+    .listbox [role="option"] {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.45rem 0.6rem;
+        border-radius: 8px;
+        cursor: pointer;
+        outline: none;
+    }
+    .listbox [role="option"]:hover,
+    .listbox [role="option"]:focus { background: rgb(255 255 255 / 0.1); }
+    [data-scene="paper"] .listbox [role="option"]:hover,
+    [data-scene="paper"] .listbox [role="option"]:focus { background: rgb(0 0 0 / 0.06); }
+    .listbox [role="option"]:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+    .listbox .check { margin-left: auto; opacity: 0; color: var(--accent); }
+    .listbox [aria-selected="true"] .check { opacity: 1; }
+    .listbox .sep { height: 1px; margin: 4px 6px; background: var(--line); }
+
+    .icon { width: 1.2rem; text-align: center; line-height: 1; flex: none; }
+    .dot {
+        width: 0.95rem;
+        height: 0.95rem;
+        flex: none;
+        border-radius: 50%;
+        background: linear-gradient(160deg, var(--glow), var(--c2));
+        box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.45);
+    }
+    .dot.rainbow { background: conic-gradient(#f25f5c, #ffe066, #50c878, #4ea8de, #b388eb, #f25f5c); }
+    @media (prefers-reduced-motion: reduce) {
+        .listbox, .select .chev { transition: none; }
+    }
     input[type="range"] { width: 100%; accent-color: var(--accent); }
     input[type="color"] {
         width: 100%;
@@ -249,33 +319,45 @@
         <button class="btn" id="toggle" type="button" aria-expanded="true" aria-controls="panel-body">Hide</button>
     </div>
     <div class="panel-body" id="panel-body">
-        <label class="field">
-            <span>Particles</span>
-            <select id="preset">
-                <option value="sakura">Sakura</option>
-                <option value="autumn">Autumn</option>
-                <option value="snow">Snow</option>
-                <option value="confetti">Confetti</option>
-                <option value="feathers">Feathers</option>
-                <option value="emoji">Emoji</option>
-                <option value="glyphs">Text glyphs</option>
-            </select>
-        </label>
+        <div class="field">
+            <span id="preset-label">Particles</span>
+            <button class="select" id="preset" type="button" popovertarget="preset-list"
+                aria-haspopup="listbox" aria-expanded="false" aria-labelledby="preset-label preset">
+                <span class="select-value"></span>
+                <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <ul class="listbox" id="preset-list" popover role="listbox" aria-labelledby="preset-label">
+                <li role="option" data-value="sakura"><span class="icon">🌸</span><span>Sakura</span><span class="check">✓</span></li>
+                <li role="option" data-value="autumn"><span class="icon">🍁</span><span>Autumn</span><span class="check">✓</span></li>
+                <li role="option" data-value="snow"><span class="icon">❄️</span><span>Snow</span><span class="check">✓</span></li>
+                <li role="option" data-value="confetti"><span class="icon">🎉</span><span>Confetti</span><span class="check">✓</span></li>
+                <li role="option" data-value="feathers"><span class="icon">🪶</span><span>Feathers</span><span class="check">✓</span></li>
+                <li role="option" data-value="emoji"><span class="icon">🍂</span><span>Emoji</span><span class="check">✓</span></li>
+                <li role="option" data-value="glyphs"><span class="icon">✿</span><span>Text glyphs</span><span class="check">✓</span></li>
+            </ul>
+        </div>
 
-        <label class="field">
-            <span>Background</span>
-            <select id="scene">
-                <option value="auto">Auto (matches particles)</option>
-                <option value="blossom">Blossom</option>
-                <option value="ember">Ember</option>
-                <option value="night">Night</option>
-                <option value="midnight">Midnight</option>
-                <option value="dusk">Dusk</option>
-                <option value="slate">Slate</option>
-                <option value="paper">Paper (light)</option>
-                <option value="custom">Custom…</option>
-            </select>
-        </label>
+        <div class="field">
+            <span id="scene-label">Background</span>
+            <button class="select" id="scene" type="button" popovertarget="scene-list"
+                aria-haspopup="listbox" aria-expanded="false" aria-labelledby="scene-label scene">
+                <span class="select-value"></span>
+                <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <ul class="listbox" id="scene-list" popover role="listbox" aria-labelledby="scene-label">
+                <li role="option" data-value="auto"><span class="dot" id="auto-dot"></span><span>Auto (matches particles)</span><span class="check">✓</span></li>
+                <li class="sep" role="presentation"></li>
+                <li role="option" data-value="blossom"><span class="dot" data-scene="blossom"></span><span>Blossom</span><span class="check">✓</span></li>
+                <li role="option" data-value="ember"><span class="dot" data-scene="ember"></span><span>Ember</span><span class="check">✓</span></li>
+                <li role="option" data-value="night"><span class="dot" data-scene="night"></span><span>Night</span><span class="check">✓</span></li>
+                <li role="option" data-value="midnight"><span class="dot" data-scene="midnight"></span><span>Midnight</span><span class="check">✓</span></li>
+                <li role="option" data-value="dusk"><span class="dot" data-scene="dusk"></span><span>Dusk</span><span class="check">✓</span></li>
+                <li role="option" data-value="slate"><span class="dot" data-scene="slate"></span><span>Slate</span><span class="check">✓</span></li>
+                <li role="option" data-value="paper"><span class="dot" data-scene="paper"></span><span>Paper (light)</span><span class="check">✓</span></li>
+                <li class="sep" role="presentation"></li>
+                <li role="option" data-value="custom"><span class="dot rainbow"></span><span>Custom…</span><span class="check">✓</span></li>
+            </ul>
+        </div>
         <div class="row" id="custom-row" hidden>
             <label class="field"><span>Top</span><input type="color" id="c1" value="#1a2a3a" /></label>
             <label class="field"><span>Bottom</span><input type="color" id="c2" value="#3a2a4a" /></label>
@@ -368,7 +450,75 @@
         emoji: "slate",
         glyphs: "slate",
     };
-    const SCENES = [...$("scene").options].map((o) => o.value);
+    const SCENES = [...document.querySelectorAll("#scene-list [role=option]")].map((o) => o.dataset.value);
+
+    /**
+     * Wires a `.select` button + popover listbox. Keyboard: arrows/Home/End move,
+     * Enter/Space pick, Esc closes (the browser returns focus to the button).
+     */
+    function listbox(name, onPick) {
+        const btn = $(name);
+        const list = $(name + "-list");
+        const opts = [...list.querySelectorAll("[role=option]")];
+        for (const o of opts) o.tabIndex = -1;
+        let value;
+        const current = () => opts.find((o) => o.dataset.value === value) ?? opts[0];
+        const set = (v) => {
+            value = v;
+            for (const o of opts) o.setAttribute("aria-selected", String(o.dataset.value === v));
+            const shown = [...current().children].filter((c) => !c.classList.contains("check"));
+            const clones = shown.map((c) => c.cloneNode(true));
+            for (const c of clones) c.removeAttribute("id");
+            btn.querySelector(".select-value").replaceChildren(...clones);
+        };
+        const place = () => {
+            const r = btn.getBoundingClientRect();
+            list.style.width = r.width + "px";
+            list.style.left = r.left + "px";
+            const h = list.offsetHeight;
+            const below = innerHeight - r.bottom;
+            const top = below >= h + 12 || below >= r.top ? r.bottom + 6 : r.top - 6 - h;
+            list.style.top = Math.max(8, Math.min(top, innerHeight - h - 8)) + "px";
+        };
+        const close = () => list.matches(":popover-open") && list.hidePopover();
+        const pick = (v) => {
+            close();
+            btn.focus();
+            if (v === value) return;
+            set(v);
+            onPick(v);
+        };
+        list.addEventListener("toggle", (e) => {
+            const open = e.newState === "open";
+            btn.setAttribute("aria-expanded", String(open));
+            if (open) {
+                place();
+                current().focus({ preventScroll: true });
+                current().scrollIntoView({ block: "nearest" });
+            }
+        });
+        btn.addEventListener("keydown", (e) => {
+            if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+            e.preventDefault();
+            list.showPopover();
+        });
+        list.addEventListener("keydown", (e) => {
+            const i = opts.indexOf(document.activeElement);
+            const go = (j) => opts[(j + opts.length) % opts.length].focus();
+            if (e.key === "ArrowDown") go(i + 1);
+            else if (e.key === "ArrowUp") go(i - 1);
+            else if (e.key === "Home") go(0);
+            else if (e.key === "End") go(-1);
+            else if (e.key === "Enter" || e.key === " ") i >= 0 && pick(opts[i].dataset.value);
+            else if (e.key === "Tab") close();
+            else return;
+            if (e.key !== "Tab") e.preventDefault();
+        });
+        for (const o of opts) o.addEventListener("click", () => pick(o.dataset.value));
+        $("panel").addEventListener("scroll", close, { passive: true });
+        addEventListener("resize", close);
+        return { set };
+    }
     const config = (p) => (p in CUSTOM ? CUSTOM[p] : PRESETS[p]);
     const defaults = (p) => {
         const c = config(p);
@@ -470,10 +620,11 @@
             for (const p of ["--c1", "--c2", "--glow"]) root.style.removeProperty(p);
         }
         $("custom-row").hidden = state.scene !== "custom";
+        $("auto-dot").dataset.scene = SCENE_FOR[state.preset];
     }
     function syncControls() {
-        $("preset").value = state.preset;
-        $("scene").value = state.scene;
+        presetSelect.set(state.preset);
+        sceneSelect.set(state.scene);
         $("c1").value = state.c1;
         $("c2").value = state.c2;
         for (const k of ["count", "speed", "wind"]) {
@@ -510,15 +661,15 @@
     }
 
     // ---- Events ----
-    $("preset").onchange = (e) => {
-        state.preset = e.target.value;
-        Object.assign(state, defaults(state.preset));
+    const presetSelect = listbox("preset", (v) => {
+        state.preset = v;
+        Object.assign(state, defaults(v));
         render();
-    };
-    $("scene").onchange = (e) => {
-        state.scene = e.target.value;
+    });
+    const sceneSelect = listbox("scene", (v) => {
+        state.scene = v;
         render({ library: false });
-    };
+    });
     for (const k of ["c1", "c2"])
         $(k).oninput = (e) => {
             state[k] = e.target.value;
