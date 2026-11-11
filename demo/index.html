@@ -1,136 +1,590 @@
 <!doctype html>
+<html lang="en" data-scene="blossom">
+<head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>petalfall demo</title>
+<title>petalfall</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>" />
+<meta
+    name="description"
+    content="Customizable falling petals, leaves, snow and emoji for any website. Zero dependencies, with a grab-and-fling interaction."
+/>
 <style>
+    /* Registered so the scene gradient can animate between presets. */
+    @property --c1 { syntax: "<color>"; inherits: true; initial-value: #4d2a45; }
+    @property --c2 { syntax: "<color>"; inherits: true; initial-value: #24152a; }
+    @property --glow { syntax: "<color>"; inherits: true; initial-value: #8a4e6e; }
+
+    :root {
+        --fg: #fbeef3;
+        --muted: rgb(251 238 243 / 0.68);
+        --panel: rgb(20 14 22 / 0.72);
+        --panel-fg: #f6eef2;
+        --line: rgb(255 255 255 / 0.14);
+        --accent: #f2a7bd;
+        --radius: 16px;
+        color-scheme: dark;
+        transition:
+            --c1 0.9s ease,
+            --c2 0.9s ease,
+            --glow 0.9s ease;
+    }
+    [data-scene="blossom"]  { --c1: #4d2a45; --c2: #24152a; --glow: #8a4e6e; --accent: #f2a7bd; }
+    [data-scene="ember"]    { --c1: #4f2812; --c2: #1f130c; --glow: #9a4a1c; --accent: #e8a24a; }
+    [data-scene="night"]    { --c1: #18264d; --c2: #070d22; --glow: #2f4f8f; --accent: #b4d0ee; }
+    [data-scene="midnight"] { --c1: #1b1930; --c2: #0b0b12; --glow: #3a2f63; --accent: #ffe066; }
+    [data-scene="dusk"]     { --c1: #3a3352; --c2: #171b29; --glow: #6a5a8e; --accent: #c9b7e8; }
+    [data-scene="slate"]    { --c1: #23252f; --c2: #121318; --glow: #3c3f52; --accent: #e58fb0; }
+    [data-scene="paper"] {
+        --c1: #efe5da; --c2: #fbf7f2; --glow: #ffffff; --accent: #c0507a;
+        --fg: #2e2228;
+        --muted: rgb(46 34 40 / 0.66);
+        --panel: rgb(255 252 248 / 0.8);
+        --panel-fg: #2e2228;
+        --line: rgb(0 0 0 / 0.1);
+        color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
     body {
-        font:
-            16px system-ui,
-            sans-serif;
-        margin: 0;
-        background: #fff7f5;
-        color: #3b2a30;
         min-height: 100vh;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: var(--fg);
+        background:
+            radial-gradient(120% 70% at 50% 0%, var(--glow), transparent 70%),
+            linear-gradient(180deg, var(--c1), var(--c2));
+        background-attachment: fixed;
+        -webkit-font-smoothing: antialiased;
     }
-    main {
-        max-width: 36rem;
-        margin: 0 auto;
-        padding: 2rem 1rem;
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+    /* Hero. Everything here is transparent, so petals behind it stay grabbable. */
+    .hero {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 1.1rem;
+        padding: 2rem 16px 6rem;
+        text-align: center;
     }
-    .card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
-        margin-bottom: 1rem;
+    .hide-hero .hero > * { visibility: hidden; }
+    .eyebrow {
+        margin: 0;
+        font-size: 0.8rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        text-wrap: balance;
     }
-    label {
-        display: block;
-        margin: 0.5rem 0 0.15rem;
-        font-size: 0.85rem;
+    h1 {
+        margin: 0;
+        font: italic 400 clamp(3.4rem, 13vw, 8.5rem) / 0.95 ui-serif, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+        letter-spacing: -0.03em;
+        text-shadow: 0 2px 40px rgb(0 0 0 / 0.18);
     }
-    button,
-    select,
-    input {
-        font: inherit;
+    .tagline {
+        margin: 0;
+        max-width: 30rem;
+        font-size: clamp(1.02rem, 2.6vw, 1.25rem);
+        color: var(--muted);
+        text-wrap: balance;
     }
-    #box {
+    .install {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 0.4rem;
+        padding: 0.55rem 0.6rem 0.55rem 1rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        font: 0.95rem ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        color: var(--panel-fg);
+    }
+    .install .dollar { opacity: 0.5; }
+    .links { display: flex; gap: 1.4rem; font-size: 0.95rem; }
+    .links a { color: var(--muted); text-decoration: none; }
+    .links a:hover { color: var(--fg); }
+    .hint { margin: 0.6rem 0 0; font-size: 0.88rem; color: var(--muted); }
+    .hint b { color: var(--accent); font-variant-numeric: tabular-nums; }
+    .note {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--muted);
+    }
+
+    /* Buttons and inputs */
+    button, select, input { font: inherit; color: inherit; }
+    .btn {
+        border: 1px solid var(--line);
+        background: rgb(255 255 255 / 0.08);
+        border-radius: 999px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.82rem;
+        cursor: pointer;
+    }
+    .btn:hover { background: rgb(255 255 255 / 0.16); }
+    [data-scene="paper"] .btn { background: rgb(0 0 0 / 0.04); }
+    [data-scene="paper"] .btn:hover { background: rgb(0 0 0 / 0.08); }
+
+    /* Control panel. Opaque background, so petals under it can't be grabbed. */
+    .panel {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 10;
+        width: 20rem;
+        max-height: calc(100vh - 40px);
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        backdrop-filter: blur(16px) saturate(1.2);
+        -webkit-backdrop-filter: blur(16px) saturate(1.2);
+        color: var(--panel-fg);
+        box-shadow: 0 20px 50px rgb(0 0 0 / 0.3);
+        font-size: 0.88rem;
+    }
+    .hide-ui .panel { display: none; }
+    .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.8rem 1rem;
+    }
+    .panel-head h2 { margin: 0; font-size: 0.9rem; font-weight: 600; }
+    .panel-body { display: grid; gap: 0.85rem; padding: 0 1rem 1rem; }
+    .panel.collapsed .panel-body { display: none; }
+
+    .field { display: grid; gap: 0.3rem; }
+    .field > span { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.8rem; }
+    .field output { font-variant-numeric: tabular-nums; color: var(--panel-fg); }
+    .row { display: flex; gap: 0.5rem; align-items: center; }
+    .row > * { flex: 1; }
+    select {
+        width: 100%;
+        padding: 0.45rem 0.6rem;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgb(255 255 255 / 0.06);
+    }
+    select option { color: #222; background: #fff; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    input[type="color"] {
+        width: 100%;
+        height: 2rem;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: transparent;
+        cursor: pointer;
+    }
+    .segmented { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .segmented label { flex: 1; text-align: center; padding: 0.35rem 0; cursor: pointer; }
+    .segmented input { position: absolute; opacity: 0; pointer-events: none; }
+    .segmented label:has(input:checked) { background: rgb(255 255 255 / 0.14); }
+    [data-scene="paper"] .segmented label:has(input:checked) { background: rgb(0 0 0 / 0.08); }
+    .segmented label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+    [hidden] { display: none !important; }
+
+    .code {
         position: relative;
-        height: 12rem;
-        background: #e8f0ff;
+        margin: 0;
+        padding: 0.8rem 0.9rem;
+        border: 1px solid var(--line);
         border-radius: 12px;
-        margin-bottom: 1rem;
+        background: rgb(0 0 0 / 0.28);
+        font: 0.76rem/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        white-space: pre;
+        overflow-x: auto;
+    }
+    [data-scene="paper"] .code { background: rgb(0 0 0 / 0.05); }
+    .code-head { display: flex; justify-content: space-between; align-items: center; }
+    .kbd { font-size: 0.75rem; color: var(--muted); }
+
+    @media (max-width: 640px) {
+        .panel {
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            width: auto;
+            max-height: 60vh;
+        }
+        .links { gap: 1rem; }
     }
 </style>
-<main>
-    <div class="card">
-        <h1>petalfall</h1>
-        <p>
-            Drag a falling petal and fling it. This card is opaque, so petals
-            behind it can't be grabbed.
-        </p>
-        <label
-            >Preset
+</head>
+<body>
+<main class="hero">
+    <p class="eyebrow">~5 kB · zero dependencies · CSS animations</p>
+    <h1>petalfall</h1>
+    <p class="tagline">Falling petals, leaves, snow and emoji for any website. Grab one and fling it.</p>
+    <div class="install">
+        <span><span class="dollar">$</span> npm i petalfall</span>
+        <button class="btn" id="copy-install" type="button">Copy</button>
+    </div>
+    <nav class="links" aria-label="Project links">
+        <a href="https://github.com/SECT19N/petalfall">GitHub</a>
+        <a href="https://www.npmjs.com/package/petalfall">npm</a>
+        <a href="https://github.com/SECT19N/petalfall#readme">Docs</a>
+    </nav>
+    <p class="hint" aria-live="polite">Petals grabbed: <b id="grabbed">0</b></p>
+    <p class="note" id="motion-note" hidden>
+        Your system asks for reduced motion, so the particles are holding still.
+    </p>
+</main>
+
+<aside class="panel" id="panel" aria-label="Playground controls">
+    <div class="panel-head">
+        <h2>Playground</h2>
+        <button class="btn" id="toggle" type="button" aria-expanded="true" aria-controls="panel-body">Hide</button>
+    </div>
+    <div class="panel-body" id="panel-body">
+        <label class="field">
+            <span>Particles</span>
             <select id="preset">
-                <option>sakura</option>
-                <option>autumn</option>
-                <option>snow</option>
-                <option>confetti</option>
-                <option value="emoji">emoji</option>
-                <option value="glyphs">text glyphs</option>
+                <option value="sakura">Sakura</option>
+                <option value="autumn">Autumn</option>
+                <option value="snow">Snow</option>
+                <option value="confetti">Confetti</option>
+                <option value="feathers">Feathers</option>
+                <option value="emoji">Emoji</option>
+                <option value="glyphs">Text glyphs</option>
             </select>
         </label>
-        <label
-            >Count <input id="count" type="range" min="0" max="120" value="16"
-        /></label>
-        <label
-            >Speed
-            <input
-                id="speed"
-                type="range"
-                min="0.2"
-                max="3"
-                step="0.1"
-                value="1"
-        /></label>
-        <button id="pause">Pause</button>
-        <button id="destroy">Destroy</button>
-        <p>Grabbed: <b id="grabbed">0</b></p>
-    </div>
-    <div id="box" class="card">Contained instance</div>
-</main>
-<script type="module">
-    import { mount, glyphs } from "../dist/index.js";
 
-    const grabbed = document.getElementById("grabbed");
-    let n = 0;
-    const common = { grab: { onGrab: () => (grabbed.textContent = ++n) } };
-    const presets = {
+        <label class="field">
+            <span>Background</span>
+            <select id="scene">
+                <option value="auto">Auto (matches particles)</option>
+                <option value="blossom">Blossom</option>
+                <option value="ember">Ember</option>
+                <option value="night">Night</option>
+                <option value="midnight">Midnight</option>
+                <option value="dusk">Dusk</option>
+                <option value="slate">Slate</option>
+                <option value="paper">Paper (light)</option>
+                <option value="custom">Custom…</option>
+            </select>
+        </label>
+        <div class="row" id="custom-row" hidden>
+            <label class="field"><span>Top</span><input type="color" id="c1" value="#1a2a3a" /></label>
+            <label class="field"><span>Bottom</span><input type="color" id="c2" value="#3a2a4a" /></label>
+        </div>
+
+        <label class="field">
+            <span>Count <output id="count-out"></output></span>
+            <input id="count" type="range" min="0" max="150" step="1" />
+        </label>
+        <label class="field">
+            <span>Speed <output id="speed-out"></output></span>
+            <input id="speed" type="range" min="0.2" max="3" step="0.1" />
+        </label>
+        <label class="field">
+            <span>Wind <output id="wind-out"></output></span>
+            <input id="wind" type="range" min="-20" max="20" step="1" />
+        </label>
+
+        <div class="field">
+            <span>Tint <output id="tint-out">preset</output></span>
+            <div class="row">
+                <input type="color" id="tint" value="#f2a7bd" aria-label="Tint colour" />
+                <button class="btn" id="tint-reset" type="button" style="flex: 0 0 auto">Reset</button>
+            </div>
+        </div>
+
+        <div class="field">
+            <span id="layer-label">Layer</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="layer-label">
+                <label><input type="radio" name="layer" value="behind" checked /> Behind</label>
+                <label><input type="radio" name="layer" value="front" /> In front</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <button class="btn" id="pause" type="button">Pause</button>
+            <button class="btn" id="hide-ui" type="button" title="Hide all controls (press H to bring them back)">Clean view</button>
+        </div>
+
+        <div class="field">
+            <div class="code-head">
+                <span class="kbd">Your setup</span>
+                <button class="btn" id="copy-code" type="button">Copy</button>
+            </div>
+            <pre class="code" id="code"></pre>
+        </div>
+        <p class="kbd" style="margin: 0">Press <b>H</b> to toggle the controls. Settings are kept in the URL.</p>
+    </div>
+</aside>
+
+<script type="module">
+    import { mount, glyphs, PRESETS } from "../dist/index.js";
+
+    const $ = (id) => document.getElementById(id);
+    const root = document.documentElement;
+
+    // Particle configs. Built-in presets come straight from the library.
+    const CUSTOM = {
+        feathers: {
+            particles: [
+                { shape: "feather", color: "#efe6d8" },
+                { shape: "feather", color: "#c9b7e8" },
+                { shape: "feather", color: "#9fc3e6" },
+            ],
+            size: [16, 28],
+            opacity: 0.85,
+            speed: 0.7,
+            wind: 5,
+            count: 18,
+        },
         emoji: {
             particles: ["🍂", "🍁", "🌸", "🪻", "✨"],
             opacity: 0.9,
-            size: [10, 18],
+            size: [12, 20],
         },
         glyphs: {
             particles: glyphs.text.florals,
-            color: "#c0507a",
+            color: "#e58fb0",
             opacity: 0.8,
         },
     };
-    const make = (name) =>
-        mount(document.body, {
-            ...common,
-            count: +count.value,
-            speed: +speed.value,
-            ...(presets[name] ?? { preset: name }),
-        });
+    // How a custom value is written in the snippet, when not a plain literal.
+    const CODE_AS = { glyphs: { particles: "glyphs.text.florals" } };
+    const SCENE_FOR = {
+        sakura: "blossom",
+        autumn: "ember",
+        snow: "night",
+        confetti: "midnight",
+        feathers: "dusk",
+        emoji: "slate",
+        glyphs: "slate",
+    };
+    const SCENES = [...$("scene").options].map((o) => o.value);
+    const config = (p) => (p in CUSTOM ? CUSTOM[p] : PRESETS[p]);
+    const defaults = (p) => {
+        const c = config(p);
+        return { count: c.count ?? 14, speed: c.speed ?? 1, wind: c.wind ?? 6 };
+    };
 
-    let pf = make("sakura");
-    window.pf = pf;
-    const box = mount(document.getElementById("box"), {
-        preset: "autumn",
-        count: 8,
-        layer: "front",
-        grab: false,
+    // ---- State, seeded from the URL ----
+    const q = new URLSearchParams(location.search);
+    const preset = q.get("preset") in SCENE_FOR ? q.get("preset") : "sakura";
+    const numParam = (k, d) => (q.has(k) && Number.isFinite(+q.get(k)) ? +q.get(k) : d);
+    const hex = (k) => (/^#?[0-9a-f]{6}$/i.test(q.get(k) ?? "") ? "#" + q.get(k).replace("#", "") : null);
+    const d0 = defaults(preset);
+    const state = {
+        preset,
+        scene: SCENES.includes(q.get("scene")) ? q.get("scene") : "auto",
+        c1: hex("c1") ?? "#1a2a3a",
+        c2: hex("c2") ?? "#3a2a4a",
+        count: numParam("count", d0.count),
+        speed: numParam("speed", d0.speed),
+        wind: numParam("wind", d0.wind),
+        tint: hex("tint"),
+        layer: q.get("layer") === "front" ? "front" : "behind",
+        paused: false,
+    };
+    if (q.get("ui") === "0") root.classList.add("hide-ui");
+    if (q.get("hero") === "0") root.classList.add("hide-hero");
+
+    // ---- Library ----
+    let grabbedCount = 0;
+    const optionsFor = (s) => {
+        const c = config(s.preset);
+        // Every key is listed so update() clears what the previous preset set.
+        return {
+            preset: s.preset in CUSTOM ? undefined : s.preset,
+            particles: undefined,
+            size: undefined,
+            opacity: undefined,
+            ...(s.preset in CUSTOM ? c : {}),
+            color: s.tint ?? (s.preset in CUSTOM ? c.color : undefined),
+            count: s.count,
+            speed: s.speed,
+            wind: s.wind,
+            layer: s.layer,
+        };
+    };
+    const pf = mount(document.body, {
+        ...optionsFor(state),
+        grab: { onGrab: () => ($("grabbed").textContent = ++grabbedCount) },
     });
-    window.box = box;
-    let paused = false;
-    preset.onchange = () =>
-        pf.update({
-            ...(presets[preset.value] ?? {
-                preset: preset.value,
-                particles: undefined,
-            }),
-        });
-    count.oninput = () => pf.update({ count: +count.value });
-    speed.oninput = () => pf.update({ speed: +speed.value });
-    pause.onclick = () => {
-        paused = !paused;
-        paused ? pf.pause() : pf.resume();
-        pause.textContent = paused ? "Resume" : "Pause";
+    window.pf = pf;
+
+    // ---- Snippet ----
+    const lit = (v) => {
+        if (typeof v === "string") return JSON.stringify(v);
+        if (Array.isArray(v)) return "[" + v.map(lit).join(", ") + "]";
+        if (v && typeof v === "object")
+            return "{ " + Object.entries(v).map(([k, x]) => `${k}: ${lit(x)}`).join(", ") + " }";
+        return String(v);
     };
-    destroy.onclick = () => {
-        pf.destroy();
-        box.destroy();
+    function snippet(s) {
+        const lines = [];
+        const def = defaults(s.preset);
+        if (s.preset in CUSTOM) {
+            const { count, speed, wind, ...rest } = CUSTOM[s.preset];
+            for (const [k, v] of Object.entries(rest)) {
+                if (k === "color" && s.tint) continue;
+                lines.push(`${k}: ${CODE_AS[s.preset]?.[k] ?? lit(v)}`);
+            }
+            if (count !== undefined || s.count !== 14) lines.push(`count: ${s.count}`);
+            if (speed !== undefined || s.speed !== 1) lines.push(`speed: ${s.speed}`);
+            if (wind !== undefined || s.wind !== 6) lines.push(`wind: ${s.wind}`);
+        } else {
+            lines.push(`preset: ${lit(s.preset)}`);
+            if (s.count !== def.count) lines.push(`count: ${s.count}`);
+            if (s.speed !== def.speed) lines.push(`speed: ${s.speed}`);
+            if (s.wind !== def.wind) lines.push(`wind: ${s.wind}`);
+        }
+        if (s.tint) lines.push(`color: ${lit(s.tint)}`);
+        if (s.layer === "front") lines.push(`layer: "front"`);
+        const imports = CODE_AS[s.preset] ? "mount, glyphs" : "mount";
+        return (
+            `import { ${imports} } from "petalfall";\n\n` +
+            `mount(document.body, {\n` +
+            lines.map((l) => `  ${l},`).join("\n") +
+            `\n});`
+        );
+    }
+
+    // ---- Rendering ----
+    function syncScene() {
+        const scene = state.scene === "auto" ? SCENE_FOR[state.preset] : state.scene;
+        if (scene === "custom") {
+            root.dataset.scene = "custom";
+            root.style.setProperty("--c1", state.c1);
+            root.style.setProperty("--c2", state.c2);
+            root.style.setProperty("--glow", "transparent");
+        } else {
+            root.dataset.scene = scene;
+            for (const p of ["--c1", "--c2", "--glow"]) root.style.removeProperty(p);
+        }
+        $("custom-row").hidden = state.scene !== "custom";
+    }
+    function syncControls() {
+        $("preset").value = state.preset;
+        $("scene").value = state.scene;
+        $("c1").value = state.c1;
+        $("c2").value = state.c2;
+        for (const k of ["count", "speed", "wind"]) {
+            $(k).value = state[k];
+            $(k + "-out").textContent = state[k];
+        }
+        $("tint-out").textContent = state.tint ?? "preset";
+        $("tint").value = state.tint ?? config(state.preset).color ?? "#f2a7bd";
+        document.querySelector(`input[name="layer"][value="${state.layer}"]`).checked = true;
+        $("code").textContent = snippet(state);
+    }
+    function syncUrl() {
+        const p = new URLSearchParams();
+        const def = defaults(state.preset);
+        if (state.preset !== "sakura") p.set("preset", state.preset);
+        if (state.scene !== "auto") p.set("scene", state.scene);
+        if (state.scene === "custom") {
+            p.set("c1", state.c1.slice(1));
+            p.set("c2", state.c2.slice(1));
+        }
+        for (const k of ["count", "speed", "wind"]) if (state[k] !== def[k]) p.set(k, state[k]);
+        if (state.tint) p.set("tint", state.tint.slice(1));
+        if (state.layer === "front") p.set("layer", "front");
+        if (root.classList.contains("hide-ui")) p.set("ui", "0");
+        if (root.classList.contains("hide-hero")) p.set("hero", "0");
+        const qs = p.toString();
+        history.replaceState(null, "", qs ? "?" + qs : location.pathname);
+    }
+    function render({ library = true } = {}) {
+        if (library) pf.update(optionsFor(state));
+        syncScene();
+        syncControls();
+        syncUrl();
+    }
+
+    // ---- Events ----
+    $("preset").onchange = (e) => {
+        state.preset = e.target.value;
+        Object.assign(state, defaults(state.preset));
+        render();
     };
+    $("scene").onchange = (e) => {
+        state.scene = e.target.value;
+        render({ library: false });
+    };
+    for (const k of ["c1", "c2"])
+        $(k).oninput = (e) => {
+            state[k] = e.target.value;
+            render({ library: false });
+        };
+    for (const k of ["count", "speed", "wind"])
+        $(k).oninput = (e) => {
+            state[k] = +e.target.value;
+            render();
+        };
+    $("tint").oninput = (e) => {
+        state.tint = e.target.value;
+        render();
+    };
+    $("tint-reset").onclick = () => {
+        state.tint = null;
+        render();
+    };
+    for (const r of document.querySelectorAll('input[name="layer"]'))
+        r.onchange = (e) => {
+            state.layer = e.target.value;
+            render();
+        };
+    $("pause").onclick = () => {
+        state.paused = !state.paused;
+        state.paused ? pf.pause() : pf.resume();
+        $("pause").textContent = state.paused ? "Resume" : "Pause";
+    };
+    $("toggle").onclick = () => {
+        const collapsed = $("panel").classList.toggle("collapsed");
+        $("toggle").textContent = collapsed ? "Show" : "Hide";
+        $("toggle").setAttribute("aria-expanded", String(!collapsed));
+    };
+    $("hide-ui").onclick = () => {
+        root.classList.add("hide-ui");
+        syncUrl();
+    };
+    document.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() !== "h" || e.metaKey || e.ctrlKey || e.altKey) return;
+        // Don't steal the key from text entry; sliders and selects are fine.
+        if (e.target.matches?.("textarea, input:not([type=range], [type=radio], [type=color])")) return;
+        root.classList.toggle("hide-ui");
+        syncUrl();
+    });
+
+    const copy = async (btn, text) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            btn.textContent = "Copied";
+        } catch {
+            btn.textContent = "Couldn't copy";
+        }
+        setTimeout(() => (btn.textContent = "Copy"), 1400);
+    };
+    $("copy-install").onclick = (e) => copy(e.currentTarget, "npm i petalfall");
+    $("copy-code").onclick = (e) => copy(e.currentTarget, snippet(state));
+
+    // Start collapsed on small screens so the hero stays visible.
+    if (matchMedia("(max-width: 640px)").matches) $("toggle").click();
+
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const syncMotion = () => ($("motion-note").hidden = !motion.matches);
+    motion.addEventListener("change", syncMotion);
+    syncMotion();
+
+    render({ library: false });
 </script>
+</body>
+</html>

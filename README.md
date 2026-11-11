@@ -9,6 +9,8 @@
 Customizable falling petals, leaves, snow and emoji for any website. Zero
 dependencies, framework-agnostic, with a grab-and-fling interaction.
 
+**[Live demo and playground →](https://sect19n.github.io/petalfall/)**
+
 - **Tiny.** About 5 kB gzipped, no runtime dependencies.
 - **Cheap to run.** Animations are CSS only; JS runs only for a particle someone is holding or has flung.
 - **Yours to style.** Ten built-in shapes, four presets, plus emoji, text glyphs, images and inline SVG.
