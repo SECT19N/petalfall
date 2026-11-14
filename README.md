@@ -97,6 +97,94 @@ export function Hero() {
 Nothing special is needed. The `petalfall/react` entry ships with a
 `"use client"` directive, and `mount` returns a no-op on the server.
 
+
+### Vue, Svelte, Solid and others
+
+There is no wrapper package for these: `mount()` returns a handle with
+`update` and `destroy`, which is all a component needs. Each snippet below
+covers the whole page; pass an element instead of `undefined` to keep the
+particles inside it. They render nothing and update the running instance when
+options change.
+
+**Vue 3**
+
+```vue
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, watch } from "vue";
+import { mount, type Petalfall, type PetalfallOptions } from "petalfall";
+
+const props = defineProps<{ options?: PetalfallOptions }>();
+let pf: Petalfall | undefined;
+
+onMounted(() => (pf = mount(undefined, { ...props.options })));
+watch(
+  () => props.options,
+  (o) => pf?.update({ ...o }),
+  { deep: true },
+);
+onBeforeUnmount(() => pf?.destroy());
+</script>
+
+<template></template>
+```
+
+**Svelte 5**
+
+```svelte
+<script lang="ts">
+  import { onMount } from "svelte";
+  import { mount, type Petalfall, type PetalfallOptions } from "petalfall";
+
+  let { target = undefined, ...options }: PetalfallOptions & { target?: HTMLElement } = $props();
+  let pf: Petalfall | undefined;
+
+  onMount(() => {
+    pf = mount(target, { ...options });
+    return () => pf?.destroy();
+  });
+  $effect(() => {
+    pf?.update({ ...options });
+  });
+</script>
+```
+
+To keep the particles inside one element, use an action instead:
+
+```ts
+import { mount, type PetalfallOptions } from "petalfall";
+
+export function petalfall(node: HTMLElement, options: PetalfallOptions) {
+  const pf = mount(node, options);
+  return {
+    update: (o: PetalfallOptions) => pf.update(o),
+    destroy: () => pf.destroy(),
+  };
+}
+```
+
+```svelte
+<section use:petalfall={{ preset: "sakura" }}>...</section>
+```
+
+**Solid**
+
+```tsx
+import { createEffect, onCleanup, onMount } from "solid-js";
+import { mount, type Petalfall, type PetalfallOptions } from "petalfall";
+
+export function Petalfall(props: PetalfallOptions & { target?: HTMLElement }) {
+  let pf: Petalfall | undefined;
+  onMount(() => (pf = mount(props.target, { ...props })));
+  createEffect(() => pf?.update({ ...props }));
+  onCleanup(() => pf?.destroy());
+  return null;
+}
+```
+
+**Angular, Astro, Lit, anything else:** call `mount()` once the element is in
+the DOM (`ngAfterViewInit`, a client-side `<script>`, `firstUpdated`) and
+`destroy()` when it goes away.
+
 ## Presets
 
 Pick one with `preset`. Any other option you pass overrides it.

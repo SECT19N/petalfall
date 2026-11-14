@@ -9,6 +9,8 @@ export interface ShapeDef {
   viewBox?: string;
   path?: string;
   stroke?: boolean;
+  /** Cut-outs inside the path (a quill slit) need the even-odd fill rule. */
+  evenodd?: boolean;
 }
 
 export const SHAPES: Record<ShapeName, ShapeDef> = {
@@ -38,11 +40,12 @@ export const SHAPES: Record<ShapeName, ShapeDef> = {
     viewBox: "0 0 24 24",
     path: "M12 1l2.2 4.6 3.3-1.6-.8 5 4.3-.7-2.3 3.8 3.3 2.3-4.6.9.900 1.900-5.1-.6.100 4.9h-2.6l.1-4.9-5.1.6.9-1.900-4.6-.9 3.3-2.3-2.3-3.8 4.3.7-.8-5 3.3 1.6z",
   },
-  // Feather: two vanes with a thin gap where the quill runs.
+  // Feather: a swept vane with split barbs, a quill slit and a short stem.
   feather: {
-    ratio: 2.3,
-    viewBox: "0 0 12 28",
-    path: "M5.5 1C1 6 0 14 4 21l1.5 6zM6.5 1C11 6 12 14 8 21l-1.5 6z",
+    ratio: 2.86,
+    evenodd: true,
+    viewBox: "0 0 14 40",
+    path: "M10.6 0.4L11.5 3.0L11.4 3.9L12.2 7.4L11.7 8.2L12.3 11.5L11.5 12.3L11.9 15.6L11.0 16.5L11.1 19.9L10.2 20.9L10.0 24.4L9.2 25.4L8.6 29.1L8.0 30.2L6.3 32.2L6.7 40.0L6.1 40.0L6.0 35.0L4.6 30.3L4.0 29.1L3.6 25.3L2.9 24.1L3.0 20.3L2.4 19.2L3.2 15.5L2.7 14.4L4.0 11.0L3.7 9.8L5.6 6.7L5.6 5.7L7.9 2.9L8.4 2.0ZM7.1 30.5C7.6 21 8.7 11 10.3 3.6L10.8 4C9.3 11.8 8.2 21.5 7.6 30.5Z",
   },
   snowflake: {
     ratio: 1,
@@ -56,10 +59,15 @@ export const isShapeName = (name: string): name is ShapeName =>
   Object.prototype.hasOwnProperty.call(SHAPES, name);
 
 /** An SVG shape as a `url("data:...")` value for CSS mask/background. */
-export function svgDataUrl(viewBox: string, path: string, stroke = false) {
+export function svgDataUrl(
+  viewBox: string,
+  path: string,
+  stroke = false,
+  evenodd = false,
+) {
   const body = stroke
     ? `<path d='${path}' stroke='black' stroke-width='3' stroke-linecap='round' fill='none'/>`
-    : `<path d='${path}'/>`;
+    : `<path d='${path}'${evenodd ? " fill-rule='evenodd'" : ""}/>`;
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='${viewBox}'>${body}</svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }

@@ -1,0 +1,71 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>petalfall bench</title>
+<style>
+  body{font:14px system-ui;margin:0;background:#fff8fa;color:#333}
+  #ui{position:fixed;top:8px;left:8px;z-index:10000;background:#fffe;padding:10px 12px;border-radius:8px;box-shadow:0 2px 12px #0003;width:300px}
+  #ui label{display:block;margin:4px 0}
+  #out{font:12px monospace;white-space:pre;margin-top:8px}
+  .sheet{position:absolute;left:0;top:0;width:100%;height:200cqh;pointer-events:none;
+    animation:pf-sheet 26s linear infinite}
+  .sheet i{position:absolute;display:block;background:var(--pf-color,#f2a7bd);opacity:.35}
+  @keyframes pf-sheet{from{transform:translate3d(0,-50%,0)}to{transform:translate3d(0,0,0)}}
+</style>
+<div id="ui">
+  <b>petalfall bench</b>
+  <label>count <input id="count" type="range" min="50" max="5000" step="50" value="500"> <span id="cv">500</span></label>
+  <label><input type="checkbox" id="rootop"> opacity on root, not per particle</label>
+  <label><input type="checkbox" id="nomask"> no mask (plain rounded divs, lower bound)</label>
+  <label><input type="checkbox" id="wc"> will-change: transform on each</label>
+  <label><input type="checkbox" id="sheet"> sheets: 40 real + rest baked into 3 static sheets</label>
+  <div id="out">measuring…</div>
+</div>
+<script type="module">
+import { mount } from "../dist/index.js";
+const $ = (id) => document.getElementById(id);
+const extra = document.createElement("style"); document.head.append(extra);
+let pf, sheets = [];
+const REAL = 40;
+
+function apply() {
+  const n = +$("count").value; $("cv").textContent = n;
+  pf?.destroy(); sheets.forEach((s) => s.remove()); sheets = [];
+  const useSheet = $("sheet").checked;
+  pf = mount(document.body, { count: useSheet ? Math.min(n, REAL) : n, grab: false });
+  let css = "";
+  if ($("rootop").checked) css += ".pf-root{opacity:.35}.pf{opacity:1!important}";
+  if ($("nomask").checked) css += ".pf-shape{-webkit-mask:none!important;mask:none!important;border-radius:50%!important}";
+  if ($("wc").checked) css += ".pf{will-change:transform}";
+  extra.textContent = css;
+  if (useSheet && n > REAL) {
+    const root = document.querySelector(".pf-root");
+    const per = Math.ceil((n - REAL) / 3);
+    for (let s = 0; s < 3; s++) {
+      const sh = document.createElement("div"); sh.className = "sheet";
+      sh.style.animationDuration = 22 + s * 5 + "s";
+      let html = "";
+      for (let i = 0; i < per; i++) {
+        const sz = 9 + Math.random() * 11, left = Math.random() * 100, top = Math.random() * 50;
+        const st = `width:${sz}px;height:${sz * 1.4}px;left:${left}%;border-radius:80% 0 80% 0;transform:rotate(${Math.random() * 360}deg)`;
+        // each particle appears in both halves so the loop is seamless
+        html += `<i style="${st};top:${top}%"></i><i style="${st};top:${top + 50}%"></i>`;
+      }
+      sh.innerHTML = html; root.append(sh); sheets.push(sh);
+    }
+  }
+}
+document.querySelectorAll("#ui input").forEach((e) => e.addEventListener("change", apply));
+$("count").addEventListener("input", () => ($("cv").textContent = $("count").value));
+
+// frame-time sampler: rolling 2s window of [timestamp, frame ms]
+let last = performance.now(), win = [];
+(function loop(t) {
+  win.push([t, t - last]); last = t;
+  while (win.length && t - win[0][0] > 2000) win.shift();
+  const ms = win.map((w) => w[1]);
+  const avg = ms.reduce((a, b) => a + b, 0) / ms.length;
+  $("out").textContent = `fps ${(1000 / avg).toFixed(0)}  avg ${avg.toFixed(1)}ms\nworst ${Math.max(...ms).toFixed(0)}ms (2s)`;
+  requestAnimationFrame(loop);
+})(last);
+apply();
+</script>

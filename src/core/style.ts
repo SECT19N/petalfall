@@ -7,7 +7,7 @@ function buildCss(): string {
   const shapes = Object.entries(SHAPES)
     .map(([name, def]) => {
       if (def.radius) return `.pf-s-${name}{border-radius:${def.radius}}`;
-      const mask = `${svgDataUrl(def.viewBox!, def.path!, def.stroke)} center/contain no-repeat`;
+      const mask = `${svgDataUrl(def.viewBox!, def.path!, def.stroke, def.evenodd)} center/contain no-repeat`;
       return `.pf-s-${name}{-webkit-mask:${mask};mask:${mask}}`;
     })
     .join("");
